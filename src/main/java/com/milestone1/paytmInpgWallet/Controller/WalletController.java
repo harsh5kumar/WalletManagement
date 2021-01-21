@@ -138,8 +138,9 @@ public class WalletController {
 	
 ///////////GET pagination transactions//////////////
 	
-	@GetMapping("/transactions/{phone}")
-	public List<Transaction> paging(@PathVariable Integer phone){
+	@GetMapping("/transactions/{phone}/{pageno}/{pagesize}")
+	public List<Transaction> paging(@PathVariable Integer phone,@PathVariable Integer pageno,
+			@PathVariable Integer pagesize){
 		List<Transaction> txnassender = wservice.findBypayerphonenumber(phone);
 		List<Transaction> txnasreceiver = wservice.findBypayeephonenumber(phone);
 		
@@ -150,7 +151,7 @@ public class WalletController {
 		
 
 		
-		int pageSize=1; // Number of records per page
+		/*int pageSize=1; // Number of records per page
         int pageNo=1;
         pageNo=(pageNo-1)*pageSize; //The starting index of each page
  
@@ -162,7 +163,19 @@ public class WalletController {
        combolist = combolist.subList(pageNo,pageNo+pageSize);
     }
 		
-		return combolist;
+		return combolist;*/
+		
+		int sum = combolist.size();
+		
+		int pageend=((pageno-1)*pagesize)+pagesize;
+		int pageindex = (pageno-1)*pagesize;
+		
+		if(pageend>sum) {
+			return combolist.subList(pageindex, sum);
+		}
+		else {
+			return combolist.subList(pageindex, pageend);
+		}
 	}
 	
 	
