@@ -36,6 +36,7 @@ public class WalletController {
 	
 	@GetMapping("/wallets")
 	public List<Wallet> listWallet(){
+		System.out.println("started on this port");
 		return wservice.getWallet();
 	}
 	
