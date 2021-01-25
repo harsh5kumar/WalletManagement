@@ -1,5 +1,7 @@
 package com.milestone1.paytmInpgWallet.entities;
 
+import org.springframework.data.elasticsearch.annotations.Document;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -8,6 +10,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="txndata")
+//@Document(indexName = "transactions", indexStoreType = "transaction",shards = 2)
 public class Transaction {
 
 	private int txnid;

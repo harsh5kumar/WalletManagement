@@ -1,5 +1,6 @@
 package com.milestone1.paytmInpgWallet.configuration;
 
+import com.milestone1.paytmInpgWallet.entities.ElasticTransaction;
 import com.milestone1.paytmInpgWallet.entities.Transaction;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -21,7 +22,7 @@ import java.util.Map;
 public class KafkaConfiguration {
 
         @Bean
-        public ProducerFactory<String, Transaction> producerFactory() {
+        public ProducerFactory<String, ElasticTransaction> producerFactory() {
             Map<String, Object> config = new HashMap<>();
 
             config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:9092");
@@ -32,13 +33,13 @@ public class KafkaConfiguration {
         }
 
     @Bean
-    public KafkaTemplate<String, Transaction> kafkaTemplate() {
+    public KafkaTemplate<String, ElasticTransaction> kafkaTemplate() {
 
             return new KafkaTemplate<>(producerFactory());
     }
 
     @Bean
-    public ConsumerFactory<String, Transaction> transactionConsumerFactory() {
+    public ConsumerFactory<String, ElasticTransaction> transactionConsumerFactory() {
         Map<String, Object> config = new HashMap<>();
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:9092");
         config.put(ConsumerConfig.GROUP_ID_CONFIG, "group-json");
@@ -46,13 +47,13 @@ public class KafkaConfiguration {
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
 
         return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(),
-                new JsonDeserializer<>(Transaction.class));
+                new JsonDeserializer<>(ElasticTransaction.class));
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Transaction>
+    public ConcurrentKafkaListenerContainerFactory<String, ElasticTransaction>
     concurrentKafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, Transaction> concurrentKafkaListenerContainerFactory =
+        ConcurrentKafkaListenerContainerFactory<String, ElasticTransaction> concurrentKafkaListenerContainerFactory =
                 new ConcurrentKafkaListenerContainerFactory();
         concurrentKafkaListenerContainerFactory.setConsumerFactory(transactionConsumerFactory());
         return concurrentKafkaListenerContainerFactory;
