@@ -15,6 +15,7 @@ import com.milestone1.paytmInpgWallet.services.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,6 +30,11 @@ public class WalletController {
 	
 	@Autowired
 	private UserService service;
+
+	@Autowired
+	private KafkaTemplate<String,Transaction> kafkaTemplate;
+
+	String kafkaTopic = "txn_by_id";
 	
 ///////////////////////////////////////////////////
 	
@@ -128,6 +134,7 @@ public class WalletController {
 				if(payer_balance>=txnAmount)
 				{
 					wservice.saveTxn(transaction);
+					kafkaTemplate.send(kafkaTopic, transaction);
 					
 					Wallet payer=payer_num.get(0);
 					Wallet payee=payee_num.get(0);

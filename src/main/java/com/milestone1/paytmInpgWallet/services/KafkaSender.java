@@ -4,10 +4,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-@Service
+//@Service
 public class KafkaSender {
 
-    @Autowired
+    /*@Autowired
     private KafkaTemplate<String,String> kafkaTemplate;
 
     String kafkaTopic = "txn_by_id";
@@ -15,5 +15,5 @@ public class KafkaSender {
     public void send(String message) {
 
         kafkaTemplate.send(kafkaTopic, message);
-    }
+    }*/
 }

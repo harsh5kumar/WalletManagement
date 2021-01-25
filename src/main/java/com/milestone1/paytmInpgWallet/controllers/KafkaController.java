@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 
-@RestController
-@RequestMapping(value = "/txn-kafka/")
+//@RestController
+//@RequestMapping(value = "/txn-kafka/")
 public class KafkaController {
 
-    @Autowired
+    /*@Autowired
     KafkaSender kafkaSender;
 
     @GetMapping(value = "/transaction")
@@ -21,6 +21,6 @@ public class KafkaController {
         kafkaSender.send(message);
 
         return "Message sent to the Kafka Topic Successfully";
-    }
+    }*/
 
 }
