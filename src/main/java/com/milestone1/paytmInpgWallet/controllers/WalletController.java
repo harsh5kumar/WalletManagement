@@ -7,9 +7,11 @@ import java.util.NoSuchElementException;
 //import java.util.logging.Level;
 
 //import org.hibernate.annotations.common.util.impl.Log_.logger;
+import com.milestone1.paytmInpgWallet.entities.ElasticTransaction;
 import com.milestone1.paytmInpgWallet.entities.User;
 import com.milestone1.paytmInpgWallet.entities.Wallet;
 import com.milestone1.paytmInpgWallet.entities.Transaction;
+import com.milestone1.paytmInpgWallet.repositories.ElasticRepository;
 import com.milestone1.paytmInpgWallet.services.UserService;
 import com.milestone1.paytmInpgWallet.services.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +34,10 @@ public class WalletController {
 	private UserService service;
 
 	@Autowired
-	private KafkaTemplate<String,Transaction> kafkaTemplate;
+	private KafkaTemplate<String,ElasticTransaction> kafkaTemplate;
+
+	@Autowired
+	private ElasticRepository elasticRepository;
 
 	String kafkaTopic = "txn_by_id";
 	
@@ -134,7 +139,7 @@ public class WalletController {
 				if(payer_balance>=txnAmount)
 				{
 					wservice.saveTxn(transaction);
-					kafkaTemplate.send(kafkaTopic, transaction);
+					//kafkaTemplate.send(kafkaTopic, transaction);
 					
 					Wallet payer=payer_num.get(0);
 					Wallet payee=payee_num.get(0);
@@ -151,6 +156,40 @@ public class WalletController {
 			} else return "payee doesn't exist";
 		} else return "payer doesn't exist";
 		
+	}
+
+	@PostMapping("/eltransaction")
+	public String createTxn(@RequestBody ElasticTransaction transaction) {
+		List<Wallet> payer_num=wservice.findByPhone(transaction.getPayerphonenumber());
+		List<Wallet> payee_num=wservice.findByPhone(transaction.getPayeephonenumber());
+
+		int payer_balance=payer_num.get(0).getWallBalance();
+		int txnAmount=transaction.getTxnamount();
+
+		if(!payer_num.isEmpty())
+		{
+			if(!payee_num.isEmpty())
+			{
+				if(payer_balance>=txnAmount)
+				{
+					//wservice.saveTxn(transaction);
+					kafkaTemplate.send(kafkaTopic, transaction);
+
+					Wallet payer=payer_num.get(0);
+					Wallet payee=payee_num.get(0);
+
+					payer.updateBalance(-txnAmount);
+					payee.updateBalance(txnAmount);
+
+					wservice.saveWallet(payer);
+					wservice.saveWallet(payee);
+
+					return "Successfully sent";
+				}
+				else return "Insufficient balance";
+			} else return "payee doesn't exist";
+		} else return "payer doesn't exist";
+
 	}
 	
 ///////////GET pagination transactions//////////////
@@ -194,7 +233,18 @@ public class WalletController {
 			return combolist.subList(pageindex, pageend);
 		}
 	}
-	
-	
+
+	@GetMapping("/transacts/{phone}")
+	public List<ElasticTransaction> paging(@PathVariable Integer phone ){
+		List<ElasticTransaction> txnassender = elasticRepository.findBypayerphonenumber(phone);
+		List<ElasticTransaction> txnasreceiver = elasticRepository.findBypayeephonenumber(phone);
+
+		List<ElasticTransaction> combolist = new ArrayList<ElasticTransaction>();
+
+		combolist.addAll(txnassender);
+		combolist.addAll(txnasreceiver);
+
+		return combolist;
+	}
 	
 }
