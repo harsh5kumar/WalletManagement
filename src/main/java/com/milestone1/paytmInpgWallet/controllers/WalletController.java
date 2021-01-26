@@ -33,13 +33,8 @@ public class WalletController {
 	@Autowired
 	private UserService service;
 
-	@Autowired
-	private KafkaTemplate<String,ElasticTransaction> kafkaTemplate;
 
-	@Autowired
-	private ElasticRepository elasticRepository;
 
-	String kafkaTopic = "txn_by_id";
 	
 ///////////////////////////////////////////////////
 	
@@ -59,44 +54,7 @@ public class WalletController {
 	}
 	
 	
-	
-	///READ all the transactions///
-	
-	@GetMapping("/transactions")
-	public List<Transaction> listTxns(){
-		return wservice.getTxns();
-	}
-	
-	///READ transaction by id///////
-	
-	@GetMapping("/transaction/{txnid}")
-	public ResponseEntity<Transaction> gettxnbid( @PathVariable Integer txnid) {
-		try {
-			Transaction txn=wservice.gettxnbid(txnid);
-			return new ResponseEntity<Transaction>(txn,HttpStatus.ACCEPTED);
-		}catch(NoSuchElementException e) {
-			//logger.log(Level.INFO, "Cannot read nonexistent transaction");
-			 return new ResponseEntity<Transaction>(HttpStatus.NOT_FOUND);
-		}
-	}
- ////////////TRANSACTION STATUS///////////
-	
-	@GetMapping("/transactionstatus/{txnid}")
-	public String gettxnstatus(@PathVariable Integer txnid) {
-		
-	 List<Transaction> txn_status=wservice.findBytxnid(txnid);
-	 
-	 if(!txn_status.isEmpty())
-	 {
-		 return "Transaction complete";
-	 }
-	 else {
-		 return "Transaction f";
-	 }
-		
-	}
-	
-	
+
 	
 ////////////////////////////////////////////////
 	
@@ -121,130 +79,8 @@ public class WalletController {
 			
 	}
 	
-	
-/////////////POST req for transaction creation//////////
-	
-	@PostMapping("/transaction")
-	public String createTxn(@RequestBody Transaction transaction) {
-		List<Wallet> payer_num=wservice.findByPhone(transaction.getPayerphonenumber());
-		List<Wallet> payee_num=wservice.findByPhone(transaction.getPayeephonenumber());
-		
-		int payer_balance=payer_num.get(0).getWallBalance();
-		int txnAmount=transaction.getTxnamount();
-		
-		if(!payer_num.isEmpty())
-		{
-			if(!payee_num.isEmpty())
-			{
-				if(payer_balance>=txnAmount)
-				{
-					wservice.saveTxn(transaction);
-					//kafkaTemplate.send(kafkaTopic, transaction);
-					
-					Wallet payer=payer_num.get(0);
-					Wallet payee=payee_num.get(0);
-					
-					payer.updateBalance(-txnAmount);
-					payee.updateBalance(txnAmount);
-					
-					wservice.saveWallet(payer);
-					wservice.saveWallet(payee);
-					
-					return "Successfully sent";
-				}
-				else return "Insufficient balance";
-			} else return "payee doesn't exist";
-		} else return "payer doesn't exist";
-		
-	}
 
-	@PostMapping("/eltransaction")
-	public String createTxn(@RequestBody ElasticTransaction transaction) {
-		List<Wallet> payer_num=wservice.findByPhone(transaction.getPayerphonenumber());
-		List<Wallet> payee_num=wservice.findByPhone(transaction.getPayeephonenumber());
 
-		int payer_balance=payer_num.get(0).getWallBalance();
-		int txnAmount=transaction.getTxnamount();
 
-		if(!payer_num.isEmpty())
-		{
-			if(!payee_num.isEmpty())
-			{
-				if(payer_balance>=txnAmount)
-				{
-					//wservice.saveTxn(transaction);
-					kafkaTemplate.send(kafkaTopic, transaction);
-
-					Wallet payer=payer_num.get(0);
-					Wallet payee=payee_num.get(0);
-
-					payer.updateBalance(-txnAmount);
-					payee.updateBalance(txnAmount);
-
-					wservice.saveWallet(payer);
-					wservice.saveWallet(payee);
-
-					return "Successfully sent";
-				}
-				else return "Insufficient balance";
-			} else return "payee doesn't exist";
-		} else return "payer doesn't exist";
-
-	}
-	
-///////////GET pagination transactions//////////////
-	
-	@GetMapping("/transactions/{phone}/{pageno}/{pagesize}")
-	public List<Transaction> paging(@PathVariable Integer phone,@PathVariable Integer pageno,
-			@PathVariable Integer pagesize){
-		List<Transaction> txnassender = wservice.findBypayerphonenumber(phone);
-		List<Transaction> txnasreceiver = wservice.findBypayeephonenumber(phone);
-		
-		List<Transaction> combolist =new ArrayList<Transaction>();
-		
-		combolist.addAll(txnassender);
-		combolist.addAll(txnasreceiver);
-		
-
-		
-		/*int pageSize=1; // Number of records per page
-        int pageNo=1;
-        pageNo=(pageNo-1)*pageSize; //The starting index of each page
- 
-    Integer sum = combolist.size(); //Total number of records
- 
-    if (pageNo+pageSize > sum) {
-      combolist = combolist.subList(pageNo,sum );
-    }else {
-       combolist = combolist.subList(pageNo,pageNo+pageSize);
-    }
-		
-		return combolist;*/
-		
-		int sum = combolist.size();
-		
-		int pageend=((pageno-1)*pagesize)+pagesize;
-		int pageindex = (pageno-1)*pagesize;
-		
-		if(pageend>sum) {
-			return combolist.subList(pageindex, sum);
-		}
-		else {
-			return combolist.subList(pageindex, pageend);
-		}
-	}
-
-	@GetMapping("/transacts/{phone}")
-	public List<ElasticTransaction> paging(@PathVariable Integer phone ){
-		List<ElasticTransaction> txnassender = elasticRepository.findBypayerphonenumber(phone);
-		List<ElasticTransaction> txnasreceiver = elasticRepository.findBypayeephonenumber(phone);
-
-		List<ElasticTransaction> combolist = new ArrayList<ElasticTransaction>();
-
-		combolist.addAll(txnassender);
-		combolist.addAll(txnasreceiver);
-
-		return combolist;
-	}
 	
 }
